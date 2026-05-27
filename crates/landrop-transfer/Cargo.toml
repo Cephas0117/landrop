@@ -1,0 +1,25 @@
+[package]
+name = "landrop-transfer"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+landrop-protocol = { path = "../landrop-protocol" }
+landrop-security = { path = "../landrop-security" }
+landrop-fs = { path = "../landrop-fs" }
+landrop-state = { path = "../landrop-state" }
+tokio = { workspace = true }
+tokio-util = { workspace = true }
+tokio-rustls = { workspace = true }
+rustls = { workspace = true }
+bytes = { workspace = true }
+blake3 = { workspace = true }
+dashmap = { workspace = true }
+serde = { workspace = true }
+uuid = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+tokio-stream = { workspace = true }
+futures = { workspace = true }
+parking_lot = { workspace = true }

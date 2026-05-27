@@ -1,0 +1,20 @@
+[package]
+name = "landrop-discovery"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+landrop-protocol = { path = "../landrop-protocol" }
+landrop-state = { path = "../landrop-state" }
+tokio = { workspace = true }
+mdns-sd = { workspace = true }
+socket2 = { workspace = true }
+uuid = { workspace = true }
+dashmap = { workspace = true }
+serde = { workspace = true }
+rmp-serde = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+hostname = { workspace = true }
+tokio-util = { workspace = true }

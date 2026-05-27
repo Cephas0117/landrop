@@ -1,0 +1,15 @@
+[package]
+name = "landrop-state"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+landrop-protocol = { path = "../landrop-protocol" }
+tokio = { workspace = true }
+dashmap = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }
+parking_lot = { workspace = true }
+once_cell = { workspace = true }
+tracing = { workspace = true }

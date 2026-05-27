@@ -1,0 +1,26 @@
+[package]
+name = "landrop-core"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+landrop-protocol = { path = "../landrop-protocol" }
+landrop-discovery = { path = "../landrop-discovery" }
+landrop-security = { path = "../landrop-security" }
+landrop-transfer = { path = "../landrop-transfer" }
+landrop-state = { path = "../landrop-state" }
+landrop-fs = { path = "../landrop-fs" }
+landrop-platform = { path = "../landrop-platform" }
+tokio = { workspace = true }
+tokio-rustls = { workspace = true }
+rustls = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+once_cell = { workspace = true }
+parking_lot = { workspace = true }
+futures = { workspace = true }
+tokio-util = { workspace = true }

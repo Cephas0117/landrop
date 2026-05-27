@@ -1,0 +1,15 @@
+[package]
+name = "landrop-fs"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+landrop-protocol = { path = "../landrop-protocol" }
+tokio = { workspace = true }
+walkdir = { workspace = true }
+blake3 = { workspace = true }
+serde = { workspace = true }
+uuid = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }

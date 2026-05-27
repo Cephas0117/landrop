@@ -1,0 +1,18 @@
+[package]
+name = "landrop-testkit"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+landrop-protocol = { path = "../landrop-protocol" }
+landrop-security = { path = "../landrop-security" }
+landrop-transfer = { path = "../landrop-transfer" }
+landrop-core = { path = "../landrop-core" }
+tokio = { workspace = true }
+tokio-rustls = { workspace = true }
+rustls = { workspace = true }
+parking_lot = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+tempfile = "3"
+anyhow = { workspace = true }

@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Dark background radial gradient -->
+    <radialGradient id="bg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#1a1b3e"/>
+      <stop offset="100%" stop-color="#060714"/>
+    </radialGradient>
+
+    <!-- Accent glow -->
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#6366f1" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#6366f1" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Signal ring gradient -->
+    <linearGradient id="ring1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0.3"/>
+    </linearGradient>
+
+    <!-- Arrow gradient -->
+    <linearGradient id="arrow" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#a5b4fc"/>
+      <stop offset="100%" stop-color="#6366f1"/>
+    </linearGradient>
+
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0" stdDeviation="12" flood-color="#6366f1" flood-opacity="0.6"/>
+    </filter>
+  </defs>
+
+  <!-- Background circle -->
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+
+  <!-- Glow overlay -->
+  <ellipse cx="256" cy="256" rx="220" ry="220" fill="url(#glow)"/>
+
+  <!-- Radar rings - outer -->
+  <circle cx="256" cy="256" r="195" fill="none" stroke="#6366f1" stroke-width="1.5" stroke-opacity="0.15"/>
+  <circle cx="256" cy="256" r="155" fill="none" stroke="#6366f1" stroke-width="1.5" stroke-opacity="0.2"/>
+  <circle cx="256" cy="256" r="115" fill="none" stroke="#6366f1" stroke-width="2" stroke-opacity="0.3"/>
+  <circle cx="256" cy="256" r="75" fill="none" stroke="#6366f1" stroke-width="2" stroke-opacity="0.4"/>
+
+  <!-- Cross hairs -->
+  <line x1="256" y1="68" x2="256" y2="444" stroke="#6366f1" stroke-width="1" stroke-opacity="0.12"/>
+  <line x1="68" y1="256" x2="444" y2="256" stroke="#6366f1" stroke-width="1" stroke-opacity="0.12"/>
+
+  <!-- Center device node -->
+  <circle cx="256" cy="256" r="52" fill="#0f1035" stroke="url(#ring1)" stroke-width="2.5" filter="url(#shadow)"/>
+
+  <!-- Upload/download arrow icon in center -->
+  <!-- Up arrow (send) -->
+  <path d="M256 220 L240 242 L250 242 L250 280 L262 280 L262 242 L272 242 Z"
+        fill="url(#arrow)"/>
+  <!-- Small down tick below (receive) -->
+  <rect x="243" y="288" width="26" height="4" rx="2" fill="#8b5cf6" fill-opacity="0.7"/>
+
+  <!-- Orbit device dots with glow -->
+  <!-- Top device (mac) -->
+  <circle cx="256" cy="108" r="22" fill="#0f1035" stroke="#6366f1" stroke-width="2" filter="url(#shadow)"/>
+  <text x="256" y="116" text-anchor="middle" font-size="20">🍎</text>
+
+  <!-- Right device (win) -->
+  <circle cx="396" cy="256" r="22" fill="#0f1035" stroke="#8b5cf6" stroke-width="2" filter="url(#shadow)"/>
+  <text x="396" y="264" text-anchor="middle" font-size="20">🪟</text>
+
+  <!-- Bottom-left device (linux) -->
+  <circle cx="148" cy="370" r="22" fill="#0f1035" stroke="#6366f1" stroke-width="2" filter="url(#shadow)"/>
+  <text x="148" y="378" text-anchor="middle" font-size="20">🐧</text>
+
+  <!-- Connection lines (dashed) -->
+  <line x1="256" y1="204" x2="256" y2="130" stroke="url(#ring1)" stroke-width="1.5" stroke-dasharray="5,4" stroke-opacity="0.6"/>
+  <line x1="304" y1="256" x2="374" y2="256" stroke="url(#ring1)" stroke-width="1.5" stroke-dasharray="5,4" stroke-opacity="0.5"/>
+  <line x1="218" y1="290" x2="166" y2="350" stroke="url(#ring1)" stroke-width="1.5" stroke-dasharray="5,4" stroke-opacity="0.5"/>
+
+  <!-- Center dot -->
+  <circle cx="256" cy="256" r="5" fill="#a5b4fc"/>
+</svg>

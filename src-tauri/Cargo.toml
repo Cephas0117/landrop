@@ -1,0 +1,37 @@
+[package]
+name = "landrop"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "landrop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[[bin]]
+name = "landrop"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+landrop-core = { path = "../crates/landrop-core" }
+landrop-state = { path = "../crates/landrop-state" }
+landrop-protocol = { path = "../crates/landrop-protocol" }
+landrop-security = { path = "../crates/landrop-security" }
+landrop-discovery = { path = "../crates/landrop-discovery" }
+landrop-transfer = { path = "../crates/landrop-transfer" }
+tauri = { version = "2", features = ["tray-icon"] }
+tauri-plugin-dialog = "2"
+tauri-plugin-shell = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+anyhow = "1"
+parking_lot = "0.12"
+directories = "5"
+hostname = "0.4"
+rustls = { version = "0.23", default-features = false, features = ["ring", "std"] }

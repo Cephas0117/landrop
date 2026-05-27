@@ -1,0 +1,18 @@
+[package]
+name = "landrop-platform"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+tokio = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+serde = { workspace = true }
+hostname = { workspace = true }
+anyhow = { workspace = true }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+# windows firewall detection (added when needed)
+
+[target.'cfg(target_os = "macos")'.dependencies]
+# macOS network permissions (added when needed)
