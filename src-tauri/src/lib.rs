@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use landrop_discovery::DiscoveryEvent;
+use landrop_platform::firewall::ensure_windows_firewall_rules;
 use landrop_transfer::TransferEventKind;
 use serde::Serialize;
 use tauri::{Emitter, Manager};
@@ -34,6 +35,11 @@ pub fn run() {
     tracing_subscriber::fmt()
         .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
         .init();
+
+    // On Windows, register inbound firewall rules for discovery (UDP 7777)
+    // and transfer (TCP 7878). The NSIS installer does this too, but the
+    // runtime call covers portable / non-elevated installs.
+    ensure_windows_firewall_rules();
 
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())

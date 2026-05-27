@@ -16,6 +16,7 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 landrop-core = { path = "../crates/landrop-core" }
+landrop-platform = { path = "../crates/landrop-platform" }
 landrop-state = { path = "../crates/landrop-state" }
 landrop-protocol = { path = "../crates/landrop-protocol" }
 landrop-security = { path = "../crates/landrop-security" }
