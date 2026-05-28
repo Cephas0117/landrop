@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use landrop_security::PairingManager;
 use serde::Serialize;
 use tauri::{Emitter, State};
 use uuid::Uuid;
@@ -11,10 +12,10 @@ use crate::state::TauriState;
 type AppState<'a> = State<'a, Arc<TauriState>>;
 
 #[derive(Clone, Serialize)]
-struct PairingRequestEvent {
+struct PairingOutgoingEvent {
     peer_id: String,
     peer_name: String,
-    peer_fingerprint: String,
+    session_id: String,
     pin: String,
 }
 
@@ -87,7 +88,6 @@ pub async fn request_pair(
 ) -> Result<(), String> {
     let peer_uuid = Uuid::parse_str(&peer_id).map_err(|e| e.to_string())?;
 
-    // Look up peer info from discovery
     let peers = state.services.discovery.get_peers();
     let peer = peers
         .iter()
@@ -95,16 +95,22 @@ pub async fn request_pair(
         .ok_or_else(|| format!("peer {peer_id} not found"))?
         .clone();
 
-    // Generate PIN and register pending request
-    let pin = state.services.pairing.create_request(peer_uuid, String::new());
+    let device_id = state.services.identity.device_id;
+    let pin = PairingManager::generate_pin();
 
-    // Emit pairing request event to frontend so PinOverlay appears
+    let session_id = state
+        .services
+        .transfer
+        .initiate_pairing(peer.addr, device_id, pin.clone())
+        .await
+        .map_err(|e| e.to_string())?;
+
     let _ = app_handle.emit(
-        events::PAIRING_REQUEST,
-        PairingRequestEvent {
+        events::PAIRING_OUTGOING,
+        PairingOutgoingEvent {
             peer_id: peer.device_id.to_string(),
             peer_name: peer.device_name,
-            peer_fingerprint: String::new(),
+            session_id: session_id.to_string(),
             pin,
         },
     );
@@ -113,33 +119,16 @@ pub async fn request_pair(
 }
 
 #[tauri::command]
-pub async fn accept_pair(
-    peer_id: String,
-    pin: String,
-    state: AppState<'_>,
-) -> Result<(), String> {
-    let peer_uuid = Uuid::parse_str(&peer_id).map_err(|e| e.to_string())?;
-
-    if !state.services.pairing.verify_pin(peer_uuid, &pin) {
-        return Err("invalid or expired PIN".into());
-    }
-
-    if let Some(pair_state) = state.services.pairing.complete_pairing(peer_uuid) {
-        state
-            .services
-            .trust_store
-            .write()
-            .add_peer(peer_uuid, pair_state.peer_fingerprint);
-        tracing::info!("paired with {peer_uuid}");
-    }
-
+pub async fn accept_pair(session_id: String, state: AppState<'_>) -> Result<(), String> {
+    let session_uuid = Uuid::parse_str(&session_id).map_err(|e| e.to_string())?;
+    state.services.transfer.resolve_pairing(session_uuid, true);
     Ok(())
 }
 
 #[tauri::command]
-pub async fn reject_pair(peer_id: String, state: AppState<'_>) -> Result<(), String> {
-    let peer_uuid = Uuid::parse_str(&peer_id).map_err(|e| e.to_string())?;
-    state.services.pairing.cancel_request(peer_uuid);
+pub async fn reject_pair(session_id: String, state: AppState<'_>) -> Result<(), String> {
+    let session_uuid = Uuid::parse_str(&session_id).map_err(|e| e.to_string())?;
+    state.services.transfer.resolve_pairing(session_uuid, false);
     Ok(())
 }
 

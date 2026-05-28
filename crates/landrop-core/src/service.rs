@@ -5,7 +5,7 @@ use anyhow::Result;
 use landrop_discovery::{DiscoveryEvent, DiscoveryManager};
 use landrop_security::{DeviceIdentity, PairingManager, TrustStore};
 use landrop_state::app::AppState;
-use landrop_transfer::{TransferEngine, TransferEvent};
+use landrop_transfer::{PairingEvent, TransferEngine, TransferEvent};
 use parking_lot::{Mutex, RwLock};
 use tokio::sync::mpsc;
 
@@ -16,9 +16,10 @@ pub struct ServiceContainer {
     pub discovery: Arc<DiscoveryManager>,
     pub transfer: Arc<TransferEngine>,
     pub pairing: Arc<PairingManager>,
-    // Taken once by the event bridge on startup
+    // Taken once by event bridges on startup
     discovery_rx: Mutex<Option<mpsc::UnboundedReceiver<DiscoveryEvent>>>,
     transfer_rx: Mutex<Option<mpsc::UnboundedReceiver<TransferEvent>>>,
+    pairing_rx: Mutex<Option<mpsc::UnboundedReceiver<PairingEvent>>>,
 }
 
 impl ServiceContainer {
@@ -33,14 +34,10 @@ impl ServiceContainer {
             receive_dir.clone(),
         ));
 
-        let (discovery, discovery_rx) =
-            DiscoveryManager::new(identity.device_id, device_name);
+        let (discovery, discovery_rx) = DiscoveryManager::new(identity.device_id, device_name);
 
-        let (transfer, transfer_rx) = TransferEngine::new(
-            identity.clone(),
-            trust_store.clone(),
-            receive_dir,
-        );
+        let (transfer, transfer_rx, pairing_rx) =
+            TransferEngine::new(identity.clone(), trust_store.clone(), receive_dir);
 
         Ok(Arc::new(Self {
             app_state,
@@ -51,6 +48,7 @@ impl ServiceContainer {
             transfer: Arc::new(transfer),
             discovery_rx: Mutex::new(Some(discovery_rx)),
             transfer_rx: Mutex::new(Some(transfer_rx)),
+            pairing_rx: Mutex::new(Some(pairing_rx)),
         }))
     }
 
@@ -60,5 +58,9 @@ impl ServiceContainer {
 
     pub fn take_transfer_rx(&self) -> Option<mpsc::UnboundedReceiver<TransferEvent>> {
         self.transfer_rx.lock().take()
+    }
+
+    pub fn take_pairing_rx(&self) -> Option<mpsc::UnboundedReceiver<PairingEvent>> {
+        self.pairing_rx.lock().take()
     }
 }

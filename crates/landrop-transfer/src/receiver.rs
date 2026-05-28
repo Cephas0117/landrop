@@ -4,6 +4,7 @@ use std::time::Instant;
 use anyhow::Result;
 use futures::{SinkExt, StreamExt};
 use landrop_fs::writer::FileWriter;
+use landrop_protocol::codec::FrameCodec;
 use landrop_protocol::{ChunkAck, DoneAck, Manifest, TransferStats, WireMessage};
 use landrop_state::transfer::TransferProgress;
 use tokio::sync::mpsc;
@@ -11,9 +12,10 @@ use tokio_util::codec::Framed;
 use uuid::Uuid;
 
 use crate::ewma::EwmaTracker;
-use landrop_protocol::codec::FrameCodec;
 
 const ACK_EVERY: u32 = 4;
+
+type ServerFramed = Framed<tokio_rustls::server::TlsStream<tokio::net::TcpStream>, FrameCodec>;
 
 pub struct Receiver;
 
@@ -33,6 +35,25 @@ impl Receiver {
             None => anyhow::bail!("connection closed before Manifest"),
         };
 
+        Self::transfer(framed, manifest, receive_dir, progress_tx).await
+    }
+
+    /// Called by the engine when the first wire message has already been read and routed.
+    pub async fn run_from_manifest(
+        framed: ServerFramed,
+        manifest: Manifest,
+        receive_dir: PathBuf,
+        progress_tx: mpsc::Sender<TransferProgress>,
+    ) -> Result<Manifest> {
+        Self::transfer(framed, manifest, receive_dir, progress_tx).await
+    }
+
+    async fn transfer(
+        mut framed: ServerFramed,
+        manifest: Manifest,
+        receive_dir: PathBuf,
+        progress_tx: mpsc::Sender<TransferProgress>,
+    ) -> Result<Manifest> {
         let session_id = manifest.session_id;
         let total_bytes = manifest.total_bytes;
         let files_total = manifest.files.iter().filter(|f| !f.is_dir).count() as u32;
@@ -56,24 +77,28 @@ impl Receiver {
                         chunk_count += 1;
 
                         if chunk_count % ACK_EVERY == 0 {
-                            framed.send(WireMessage::ChunkAck(ChunkAck {
-                                session_id,
-                                file_id: chunk.file_id,
-                                seq: chunk.seq,
-                                committed_bytes: written,
-                            })).await?;
+                            framed
+                                .send(WireMessage::ChunkAck(ChunkAck {
+                                    session_id,
+                                    file_id: chunk.file_id,
+                                    seq: chunk.seq,
+                                    committed_bytes: written,
+                                }))
+                                .await?;
                         }
                     } else {
                         writer.finalize_file(chunk.file_id).await?;
                         files_done += 1;
                         chunk_count = 0;
 
-                        framed.send(WireMessage::ChunkAck(ChunkAck {
-                            session_id,
-                            file_id: chunk.file_id,
-                            seq: chunk.seq,
-                            committed_bytes: bytes_received,
-                        })).await?;
+                        framed
+                            .send(WireMessage::ChunkAck(ChunkAck {
+                                session_id,
+                                file_id: chunk.file_id,
+                                seq: chunk.seq,
+                                committed_bytes: bytes_received,
+                            }))
+                            .await?;
                     }
 
                     let speed = ewma.update(bytes_received);
@@ -91,19 +116,21 @@ impl Receiver {
                 Some(Ok(WireMessage::Done(_done))) => {
                     writer.finalize_all().await?;
                     let elapsed = started.elapsed().as_millis() as u64;
-                    framed.send(WireMessage::DoneAck(DoneAck {
-                        session_id,
-                        success: true,
-                        stats: TransferStats {
-                            total_bytes,
-                            transferred_bytes: bytes_received,
-                            elapsed_ms: elapsed,
-                            files_total,
-                            files_completed: files_done,
-                            files_failed: 0,
-                        },
-                        failed_files: vec![],
-                    })).await?;
+                    framed
+                        .send(WireMessage::DoneAck(DoneAck {
+                            session_id,
+                            success: true,
+                            stats: TransferStats {
+                                total_bytes,
+                                transferred_bytes: bytes_received,
+                                elapsed_ms: elapsed,
+                                files_total,
+                                files_completed: files_done,
+                                files_failed: 0,
+                            },
+                            failed_files: vec![],
+                        }))
+                        .await?;
                     break;
                 }
                 Some(Ok(other)) => anyhow::bail!("unexpected during transfer: {:?}", other),

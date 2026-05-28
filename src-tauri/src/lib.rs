@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use landrop_discovery::DiscoveryEvent;
 use landrop_platform::firewall::ensure_windows_firewall_rules;
-use landrop_transfer::TransferEventKind;
+use landrop_transfer::{PairingEvent, TransferEventKind};
 use serde::Serialize;
 use tauri::{Emitter, Manager};
 
@@ -30,15 +30,27 @@ struct FailedPayload {
     error: String,
 }
 
+#[derive(Clone, Serialize)]
+struct PairingRequestEvent {
+    peer_id: String,
+    peer_name: String,
+    peer_fingerprint: String,
+    session_id: String,
+    pin: String,
+}
+
+#[derive(Clone, Serialize)]
+struct PairingResolvedEvent {
+    session_id: String,
+    accepted: bool,
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tracing_subscriber::fmt()
         .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
         .init();
 
-    // On Windows, register inbound firewall rules for discovery (UDP 7777)
-    // and transfer (TCP 7878). The NSIS installer does this too, but the
-    // runtime call covers portable / non-elevated installs.
     ensure_windows_firewall_rules();
 
     tauri::Builder::default()
@@ -113,6 +125,52 @@ pub fn run() {
                                         let _ = h.emit(
                                             events::TRANSFER_FAILED,
                                             FailedPayload { transfer_id: tid, error: err },
+                                        );
+                                    }
+                                }
+                            }
+                        });
+
+                        // Pairing event bridge
+                        let h = handle.clone();
+                        let svc = services.clone();
+                        let mut prx = init.pairing_rx;
+                        tauri::async_runtime::spawn(async move {
+                            while let Some(event) = prx.recv().await {
+                                match event {
+                                    PairingEvent::IncomingRequest {
+                                        peer_id,
+                                        session_id,
+                                        pin,
+                                        peer_fingerprint,
+                                    } => {
+                                        // Resolve peer name from discovery if available
+                                        let peer_name = svc
+                                            .discovery
+                                            .get_peers()
+                                            .into_iter()
+                                            .find(|p| p.device_id == peer_id)
+                                            .map(|p| p.device_name)
+                                            .unwrap_or_else(|| peer_id.to_string());
+
+                                        let _ = h.emit(
+                                            events::PAIRING_REQUEST,
+                                            PairingRequestEvent {
+                                                peer_id: peer_id.to_string(),
+                                                peer_name,
+                                                peer_fingerprint,
+                                                session_id: session_id.to_string(),
+                                                pin,
+                                            },
+                                        );
+                                    }
+                                    PairingEvent::OutgoingResolved { session_id, accepted } => {
+                                        let _ = h.emit(
+                                            events::PAIRING_RESOLVED,
+                                            PairingResolvedEvent {
+                                                session_id: session_id.to_string(),
+                                                accepted,
+                                            },
                                         );
                                     }
                                 }

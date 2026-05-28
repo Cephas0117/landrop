@@ -12,6 +12,7 @@
   import HistoryPanel from "./components/transfer/HistoryPanel.svelte";
   import DragDropZone from "./components/transfer/DragDropZone.svelte";
   import PinOverlay from "./components/pairing/PinOverlay.svelte";
+  import PairingOutgoing from "./components/pairing/PairingOutgoing.svelte";
   import ToastStack from "./components/common/ToastStack.svelte";
 
   let appInfo = $state<AppInfo | null>(null);
@@ -213,6 +214,7 @@
   <!-- Global overlays -->
   <DragDropZone {selectedPeer} />
   <PinOverlay />
+  <PairingOutgoing />
 </div>
 
 <!-- Toast notifications -->

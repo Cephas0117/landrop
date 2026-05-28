@@ -19,13 +19,13 @@
 
   async function accept() {
     if (!request) return;
-    await ipc.acceptPair(request.peer_id, request.pin);
+    await ipc.acceptPair(request.session_id);
     request = null;
   }
 
   async function reject() {
     if (!request) return;
-    await ipc.rejectPair(request.peer_id);
+    await ipc.rejectPair(request.session_id);
     request = null;
   }
 </script>
@@ -47,7 +47,11 @@
 
       <p class="fingerprint">
         <span class="fp-label">设备指纹</span>
-        <span class="fp-value">{request.peer_fingerprint.slice(0, 16)}…</span>
+        <span class="fp-value">
+          {request.peer_fingerprint.length > 0
+            ? request.peer_fingerprint.slice(0, 16) + "…"
+            : "—"}
+        </span>
       </p>
 
       <div class="actions">

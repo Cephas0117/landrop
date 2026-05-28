@@ -14,7 +14,20 @@ export interface PairingRequest {
   peer_id: string;
   peer_name: string;
   peer_fingerprint: string;
+  session_id: string;
   pin: string;
+}
+
+export interface PairingOutgoing {
+  peer_id: string;
+  peer_name: string;
+  session_id: string;
+  pin: string;
+}
+
+export interface PairingResolved {
+  session_id: string;
+  accepted: boolean;
 }
 
 export const ipc = {
@@ -42,12 +55,12 @@ export const ipc = {
     return invoke("request_pair", { peerId });
   },
 
-  async acceptPair(peerId: string, pin: string): Promise<void> {
-    return invoke("accept_pair", { peerId, pin });
+  async acceptPair(sessionId: string): Promise<void> {
+    return invoke("accept_pair", { sessionId });
   },
 
-  async rejectPair(peerId: string): Promise<void> {
-    return invoke("reject_pair", { peerId });
+  async rejectPair(sessionId: string): Promise<void> {
+    return invoke("reject_pair", { sessionId });
   },
 
   async queueSend(peerId: string, paths: string[]): Promise<string> {
@@ -77,6 +90,14 @@ export const ipc = {
 
   async listenPairingRequest(cb: (req: PairingRequest) => void): Promise<UnlistenFn> {
     return listen("pairing://request", (e) => cb(e.payload as PairingRequest));
+  },
+
+  async listenPairingOutgoing(cb: (data: PairingOutgoing) => void): Promise<UnlistenFn> {
+    return listen("pairing://outgoing", (e) => cb(e.payload as PairingOutgoing));
+  },
+
+  async listenPairingResolved(cb: (data: PairingResolved) => void): Promise<UnlistenFn> {
+    return listen("pairing://resolved", (e) => cb(e.payload as PairingResolved));
   },
 
   async listenProgress(

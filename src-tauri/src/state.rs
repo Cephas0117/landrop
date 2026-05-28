@@ -5,7 +5,7 @@ use anyhow::Result;
 use directories::UserDirs;
 use landrop_core::ServiceContainer;
 use landrop_discovery::DiscoveryEvent;
-use landrop_transfer::TransferEvent;
+use landrop_transfer::{PairingEvent, TransferEvent};
 use tokio::sync::mpsc;
 
 pub struct TauriState {
@@ -16,6 +16,7 @@ pub struct AppInit {
     pub state: TauriState,
     pub discovery_rx: mpsc::UnboundedReceiver<DiscoveryEvent>,
     pub transfer_rx: mpsc::UnboundedReceiver<TransferEvent>,
+    pub pairing_rx: mpsc::UnboundedReceiver<PairingEvent>,
 }
 
 pub async fn init_app_state() -> Result<AppInit> {
@@ -31,10 +32,12 @@ pub async fn init_app_state() -> Result<AppInit> {
 
     let discovery_rx = services.take_discovery_rx().expect("discovery_rx taken twice");
     let transfer_rx = services.take_transfer_rx().expect("transfer_rx taken twice");
+    let pairing_rx = services.take_pairing_rx().expect("pairing_rx taken twice");
 
     Ok(AppInit {
         state: TauriState { services },
         discovery_rx,
         transfer_rx,
+        pairing_rx,
     })
 }
