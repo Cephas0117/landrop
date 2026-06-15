@@ -15,7 +15,11 @@ const ANNOUNCE_INTERVAL: Duration = Duration::from_secs(2);
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum BroadcastMessage {
-    Discover { device_id: Uuid },
+    Discover {
+        device_id: Uuid,
+        device_name: String,
+        tcp_port: u16,
+    },
     Here {
         device_id: Uuid,
         device_name: String,
@@ -72,7 +76,21 @@ impl BroadcastDiscovery {
                 let Ok(msg) = rmp_serde::from_slice::<BroadcastMessage>(&buf[..len]) else { continue };
 
                 match msg {
-                    BroadcastMessage::Discover { device_id } if device_id != my_id => {
+                    BroadcastMessage::Discover { device_id, device_name, tcp_port }
+                        if device_id != my_id =>
+                    {
+                        // Register the sender directly — don't rely on our reply
+                        // making it back (e.g. the sender's firewall may accept
+                        // its own outbound broadcasts but drop our unsolicited
+                        // unicast reply).
+                        let peer = BroadcastPeer {
+                            device_id,
+                            device_name,
+                            addr: src.ip(),
+                            tcp_port,
+                        };
+                        let _ = tx_clone.send(peer);
+
                         let here = BroadcastMessage::Here {
                             device_id: my_id,
                             device_name: my_name.clone(),
@@ -101,11 +119,18 @@ impl BroadcastDiscovery {
 
         // Periodic DISCOVER announcer
         let probe_socket = socket.clone();
+        let announce_id = device_id;
+        let announce_name = device_name.clone();
+        let announce_port = tcp_port;
         tokio::spawn(async move {
             let mut interval = tokio::time::interval(ANNOUNCE_INTERVAL);
             loop {
                 interval.tick().await;
-                let msg = BroadcastMessage::Discover { device_id: my_id };
+                let msg = BroadcastMessage::Discover {
+                    device_id: announce_id,
+                    device_name: announce_name.clone(),
+                    tcp_port: announce_port,
+                };
                 if let Ok(data) = rmp_serde::to_vec(&msg) {
                     let target = SocketAddr::V4(SocketAddrV4::new(BROADCAST_ADDR, BROADCAST_PORT));
                     let _ = probe_socket.send_to(&data, target).await;

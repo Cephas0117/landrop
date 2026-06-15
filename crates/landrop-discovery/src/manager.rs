@@ -11,7 +11,7 @@ use crate::broadcast::BroadcastDiscovery;
 #[allow(unused_imports)]
 use crate::mdns::MdnsDiscovery;
 
-const PEER_TTL_MS: u64 = 5_000;
+const PEER_TTL_MS: u64 = 8_000;
 
 #[derive(Debug, Clone)]
 pub struct DiscoveredPeer {
