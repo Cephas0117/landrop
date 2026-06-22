@@ -104,6 +104,7 @@ impl TransferEngine {
         peer_addr: SocketAddr,
         device_id: Uuid,
         pin: String,
+        my_fingerprint: String,
     ) -> Result<Uuid> {
         let session_id = Uuid::new_v4();
 
@@ -125,7 +126,7 @@ impl TransferEngine {
                 device_id,
                 session_id,
                 pin,
-                peer_fingerprint: String::new(),
+                peer_fingerprint: my_fingerprint,
             }))
             .await?;
 
@@ -136,7 +137,11 @@ impl TransferEngine {
             let accepted = match framed.next().await {
                 Some(Ok(WireMessage::PairAccept(accept))) => {
                     if accept.accepted {
-                        trust_store.write().add_peer(accept.device_id, accept.peer_fingerprint);
+                        let mut ts = trust_store.write();
+                        ts.add_peer(accept.device_id, accept.peer_fingerprint);
+                        if let Err(e) = ts.save() {
+                            tracing::error!("failed to save trust store: {e}");
+                        }
                     }
                     accept.accepted
                 }
@@ -160,6 +165,7 @@ impl TransferEngine {
         let pending_incoming = self.pending_incoming.clone();
         let trust_store = self.trust_store.clone();
         let device_id = self.identity.device_id;
+        let my_fingerprint = self.identity.fingerprint.0.clone();
 
         tokio::spawn(async move {
             loop {
@@ -170,6 +176,7 @@ impl TransferEngine {
                 let pairing_tx = pairing_tx.clone();
                 let pending_incoming = pending_incoming.clone();
                 let trust_store = trust_store.clone();
+                let my_fingerprint = my_fingerprint.clone();
 
                 tokio::spawn(async move {
                     let tls_stream = match acceptor.accept(stream).await {
@@ -205,16 +212,23 @@ impl TransferEngine {
                                     device_id,
                                     session_id,
                                     accepted,
-                                    peer_fingerprint: String::new(),
+                                    peer_fingerprint: my_fingerprint.clone(),
                                 }))
                                 .await;
 
                             if accepted {
-                                trust_store
-                                    .write()
-                                    .add_peer(req.device_id, req.peer_fingerprint);
+                                let mut ts = trust_store.write();
+                                ts.add_peer(req.device_id, req.peer_fingerprint);
+                                if let Err(e) = ts.save() {
+                                    tracing::error!("failed to save trust store: {e}");
+                                }
                                 tracing::info!("accepted pairing from {}", req.device_id);
                             }
+
+                            let _ = pairing_tx.send(PairingEvent::OutgoingResolved {
+                                session_id,
+                                accepted,
+                            });
                         }
                         Some(Ok(WireMessage::Manifest(manifest))) => {
                             let transfer_id = Uuid::new_v4();
