@@ -80,6 +80,19 @@ export const ipc = {
   },
 
   // Event listeners
+  async listenTransferQueued(
+    cb: (data: {
+      transfer_id: string;
+      peer_id: string;
+      peer_name: string;
+      direction: string;
+      files_total: number;
+      total_bytes: number;
+    }) => void
+  ): Promise<UnlistenFn> {
+    return listen("transfer://queued", (e) => cb(e.payload as any));
+  },
+
   async listenPeerUpsert(cb: (peer: Peer) => void): Promise<UnlistenFn> {
     return listen("discovery://peer-upsert", (e) => cb(e.payload as Peer));
   },
@@ -101,11 +114,17 @@ export const ipc = {
   },
 
   async listenProgress(
-    cb: (data: { transfer_id: string; progress: TransferProgress }) => void
+    cb: (data: {
+      transfer_id: string;
+      bytes_sent: number;
+      total_bytes: number;
+      speed_bps: number;
+      eta_secs: number;
+      files_done: number;
+      files_total: number;
+    }) => void
   ): Promise<UnlistenFn> {
-    return listen("transfer://progress", (e) =>
-      cb(e.payload as { transfer_id: string; progress: TransferProgress })
-    );
+    return listen("transfer://progress", (e) => cb(e.payload as any));
   },
 
   async listenCompleted(cb: (id: string) => void): Promise<UnlistenFn> {

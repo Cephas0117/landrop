@@ -46,8 +46,36 @@
         if (peer) toasts.warn(`${peer.name} 已离线`);
         devices.remove(id);
       }),
-      await ipc.listenProgress(({ transfer_id, progress }) => {
-        transfers.updateProgress(transfer_id, progress);
+      await ipc.listenTransferQueued((data) => {
+        transfers.start({
+          id: data.transfer_id,
+          peerId: data.peer_id,
+          peerName: data.peer_name,
+          direction: data.direction === "Send" ? "Send" : "Receive",
+          status: "Queued",
+          progress: {
+            bytesSent: 0,
+            totalBytes: data.total_bytes,
+            speedBps: 0,
+            etaSecs: 0,
+            filesDone: 0,
+            filesTotal: data.files_total,
+          },
+          paths: [],
+        });
+        if (data.direction === "Receive") {
+          toasts.info(`正在接收来自 ${data.peer_name} 的文件`);
+        }
+      }),
+      await ipc.listenProgress((data) => {
+        transfers.updateProgress(data.transfer_id, {
+          bytesSent: data.bytes_sent,
+          totalBytes: data.total_bytes,
+          speedBps: data.speed_bps,
+          etaSecs: data.eta_secs,
+          filesDone: data.files_done,
+          filesTotal: data.files_total,
+        });
       }),
       await ipc.listenCompleted((id) => {
         const t = transfers.map.get(id);

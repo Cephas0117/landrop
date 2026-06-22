@@ -29,9 +29,22 @@ pub struct TransferEvent {
 }
 
 pub enum TransferEventKind {
+    Queued {
+        peer_id: Uuid,
+        peer_name: String,
+        direction: TransferDirection,
+        files_total: u32,
+        total_bytes: u64,
+    },
     Progress(TransferProgress),
     Completed,
     Failed(String),
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum TransferDirection {
+    Send,
+    Receive,
 }
 
 pub enum PairingEvent {
@@ -233,6 +246,19 @@ impl TransferEngine {
                         Some(Ok(WireMessage::Manifest(manifest))) => {
                             let transfer_id = Uuid::new_v4();
                             let dir = receive_dir.read().clone();
+                            let files_total = manifest.files.iter().filter(|f| !f.is_dir).count() as u32;
+
+                            let _ = event_tx.send(TransferEvent {
+                                transfer_id,
+                                event: TransferEventKind::Queued {
+                                    peer_id: Uuid::nil(),
+                                    peer_name: manifest.transfer_name.clone(),
+                                    direction: TransferDirection::Receive,
+                                    files_total,
+                                    total_bytes: manifest.total_bytes,
+                                },
+                            });
+
                             let (progress_tx, mut progress_rx) = mpsc::channel(32);
 
                             let tx = event_tx.clone();
@@ -285,6 +311,7 @@ impl TransferEngine {
         &self,
         peer_addr: SocketAddr,
         peer_id: Uuid,
+        peer_name: String,
         paths: Vec<PathBuf>,
     ) -> Result<Uuid> {
         let verifier = TofuVerifier::new(self.trust_store.clone());
@@ -299,8 +326,21 @@ impl TransferEngine {
             .to_owned();
         let tls_stream = connector.connect(server_name, stream).await?;
 
+        let files_total = paths.len() as u32;
+
         let transfer_id = Uuid::new_v4();
         let event_tx = self.event_tx.clone();
+
+        let _ = event_tx.send(TransferEvent {
+            transfer_id,
+            event: TransferEventKind::Queued {
+                peer_id,
+                peer_name,
+                direction: TransferDirection::Send,
+                files_total,
+                total_bytes: 0,
+            },
+        });
         let (progress_tx, mut progress_rx) = mpsc::channel(32);
         let (cancel_tx, cancel_rx) = mpsc::channel(1);
 
