@@ -153,7 +153,7 @@ pub async fn queue_send(
     let transfer_id = state
         .services
         .transfer
-        .send(peer.addr, peer_uuid, path_bufs)
+        .send(peer.addr, peer_uuid, peer.device_name, path_bufs)
         .await
         .map_err(|e| e.to_string())?;
 

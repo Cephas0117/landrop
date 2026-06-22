@@ -3,4 +3,4 @@ pub mod receiver;
 pub mod engine;
 pub mod ewma;
 
-pub use engine::{PairingEvent, TransferEngine, TransferEvent, TransferEventKind};
+pub use engine::{PairingEvent, TransferDirection, TransferEngine, TransferEvent, TransferEventKind};

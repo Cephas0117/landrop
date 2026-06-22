@@ -14,6 +14,16 @@ mod state;
 use dto::PeerDto;
 
 #[derive(Clone, Serialize)]
+struct QueuedPayload {
+    transfer_id: String,
+    peer_id: String,
+    peer_name: String,
+    direction: String,
+    files_total: u32,
+    total_bytes: u64,
+}
+
+#[derive(Clone, Serialize)]
 struct ProgressPayload {
     transfer_id: String,
     bytes_sent: u64,
@@ -106,6 +116,25 @@ pub fn run() {
                             while let Some(event) = trx.recv().await {
                                 let tid = event.transfer_id.to_string();
                                 match event.event {
+                                    TransferEventKind::Queued {
+                                        peer_id,
+                                        peer_name,
+                                        direction,
+                                        files_total,
+                                        total_bytes,
+                                    } => {
+                                        let _ = h.emit(
+                                            events::TRANSFER_QUEUED,
+                                            QueuedPayload {
+                                                transfer_id: tid,
+                                                peer_id: peer_id.to_string(),
+                                                peer_name,
+                                                direction: format!("{:?}", direction),
+                                                files_total,
+                                                total_bytes,
+                                            },
+                                        );
+                                    }
                                     TransferEventKind::Progress(p) => {
                                         let _ = h.emit(
                                             events::TRANSFER_PROGRESS,
