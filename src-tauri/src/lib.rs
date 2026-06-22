@@ -74,19 +74,21 @@ pub fn run() {
 
                         // Discovery event bridge
                         let h = handle.clone();
+                        let ts = services.trust_store.clone();
                         let mut drx = init.discovery_rx;
                         tauri::async_runtime::spawn(async move {
                             while let Some(event) = drx.recv().await {
                                 match event {
                                     DiscoveryEvent::PeerAdded(p)
                                     | DiscoveryEvent::PeerUpdated(p) => {
+                                        let trusted = ts.read().contains(p.device_id);
                                         let dto = PeerDto {
                                             id: p.device_id.to_string(),
                                             name: p.device_name,
                                             os: "unknown".into(),
                                             addr: p.addr.to_string(),
                                             fingerprint: String::new(),
-                                            state: "Discovered".into(),
+                                            state: if trusted { "Paired" } else { "Discovered" }.into(),
                                         };
                                         let _ = h.emit(events::PEER_UPSERT, dto);
                                     }
@@ -144,7 +146,6 @@ pub fn run() {
                                         pin,
                                         peer_fingerprint,
                                     } => {
-                                        // Resolve peer name from discovery if available
                                         let peer_name = svc
                                             .discovery
                                             .get_peers()
@@ -172,6 +173,24 @@ pub fn run() {
                                                 accepted,
                                             },
                                         );
+
+                                        // Refresh all peer states so UI reflects pairing result
+                                        if accepted {
+                                            for p in svc.discovery.get_peers() {
+                                                let trusted = svc.trust_store.read().contains(p.device_id);
+                                                let _ = h.emit(
+                                                    events::PEER_UPSERT,
+                                                    PeerDto {
+                                                        id: p.device_id.to_string(),
+                                                        name: p.device_name,
+                                                        os: "unknown".into(),
+                                                        addr: p.addr.to_string(),
+                                                        fingerprint: String::new(),
+                                                        state: if trusted { "Paired" } else { "Discovered" }.into(),
+                                                    },
+                                                );
+                                            }
+                                        }
                                     }
                                 }
                             }

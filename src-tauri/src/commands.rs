@@ -47,7 +47,7 @@ pub async fn list_peers(state: AppState<'_>) -> Result<Vec<PeerDto>, String> {
     Ok(peers
         .into_iter()
         .map(|p| {
-            let trusted = trust.is_trusted(p.device_id, "");
+            let trusted = trust.contains(p.device_id);
             PeerDto {
                 id: p.device_id.to_string(),
                 name: p.device_name.clone(),
@@ -70,13 +70,14 @@ pub async fn probe_manual_peer(addr: String, state: AppState<'_>) -> Result<Peer
         .probe_manual(socket_addr)
         .await
         .map_err(|e| e.to_string())?;
+    let trusted = state.services.trust_store.read().contains(peer.device_id);
     Ok(PeerDto {
         id: peer.device_id.to_string(),
         name: peer.device_name,
         os: "unknown".into(),
         addr: peer.addr.to_string(),
         fingerprint: String::new(),
-        state: "Discovered".into(),
+        state: if trusted { "Paired" } else { "Discovered" }.into(),
     })
 }
 
@@ -96,12 +97,13 @@ pub async fn request_pair(
         .clone();
 
     let device_id = state.services.identity.device_id;
+    let my_fingerprint = state.services.identity.fingerprint.0.clone();
     let pin = PairingManager::generate_pin();
 
     let session_id = state
         .services
         .transfer
-        .initiate_pairing(peer.addr, device_id, pin.clone())
+        .initiate_pairing(peer.addr, device_id, pin.clone(), my_fingerprint)
         .await
         .map_err(|e| e.to_string())?;
 
