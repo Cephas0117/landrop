@@ -178,6 +178,8 @@ cargo tauri build
 
 产物位于 `target/release/bundle/`。
 
+也可在 GitHub 的 **Actions → Release → Run workflow** 选择 `main` 手动构建。完成后从 Artifacts 下载 Windows EXE/MSI、macOS Apple Silicon DMG 和 Intel DMG；手动构建不会创建公开 Release。Actions 使用前端锁定的 Tauri CLI，并校验 macOS 应用的本地签名（未做 Apple 公证）。
+
 跨平台构建（macOS + Windows）通过 GitHub Actions 自动完成，推送 `v*` tag 即可触发：
 
 ```bash

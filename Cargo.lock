@@ -1843,7 +1843,7 @@ dependencies = [
 
 [[package]]
 name = "landrop"
-version = "0.1.0"
+version = "0.1.6"
 dependencies = [
  "anyhow",
  "directories",
@@ -1871,7 +1871,7 @@ dependencies = [
 
 [[package]]
 name = "landrop-core"
-version = "0.1.0"
+version = "0.1.6"
 dependencies = [
  "anyhow",
  "futures",
@@ -1897,7 +1897,7 @@ dependencies = [
 
 [[package]]
 name = "landrop-discovery"
-version = "0.1.0"
+version = "0.1.6"
 dependencies = [
  "anyhow",
  "dashmap",
@@ -1917,7 +1917,7 @@ dependencies = [
 
 [[package]]
 name = "landrop-fs"
-version = "0.1.0"
+version = "0.1.6"
 dependencies = [
  "anyhow",
  "blake3",
@@ -1932,7 +1932,7 @@ dependencies = [
 
 [[package]]
 name = "landrop-platform"
-version = "0.1.0"
+version = "0.1.6"
 dependencies = [
  "anyhow",
  "hostname",
@@ -1944,7 +1944,7 @@ dependencies = [
 
 [[package]]
 name = "landrop-protocol"
-version = "0.1.0"
+version = "0.1.6"
 dependencies = [
  "bytes",
  "rmp-serde",
@@ -1957,7 +1957,7 @@ dependencies = [
 
 [[package]]
 name = "landrop-security"
-version = "0.1.0"
+version = "0.1.6"
 dependencies = [
  "anyhow",
  "dashmap",
@@ -1980,7 +1980,7 @@ dependencies = [
 
 [[package]]
 name = "landrop-state"
-version = "0.1.0"
+version = "0.1.6"
 dependencies = [
  "dashmap",
  "landrop-protocol",
@@ -1995,7 +1995,7 @@ dependencies = [
 
 [[package]]
 name = "landrop-testkit"
-version = "0.1.0"
+version = "0.1.6"
 dependencies = [
  "anyhow",
  "futures",
@@ -2017,7 +2017,7 @@ dependencies = [
 
 [[package]]
 name = "landrop-transfer"
-version = "0.1.0"
+version = "0.1.6"
 dependencies = [
  "anyhow",
  "blake3",

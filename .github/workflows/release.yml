@@ -6,6 +6,9 @@ on:
       - "v*"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build:
     strategy:
@@ -54,37 +57,42 @@ jobs:
         run: npm ci
         working-directory: frontend
 
-      - name: Install Tauri CLI
-        run: cargo install tauri-cli --version "^2" --locked
-
       - name: Build Tauri app (macOS)
         if: matrix.platform == 'macos-latest'
-        run: cargo tauri build ${{ matrix.args }}
+        run: node frontend/node_modules/@tauri-apps/cli/tauri.js build ${{ matrix.args }} --ci --bundles dmg -- --locked
         env:
+          APPLE_SIGNING_IDENTITY: "-"
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
 
       - name: Build Tauri app (Windows)
         if: matrix.platform == 'windows-latest'
-        run: cargo tauri build
+        run: node frontend/node_modules/@tauri-apps/cli/tauri.js build --ci --bundles nsis,msi -- --locked
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+
+      - name: Verify macOS app signature
+        if: matrix.platform == 'macos-latest'
+        run: codesign --verify --deep --strict target/${{ matrix.arch == 'aarch64' && 'aarch64-apple-darwin' || 'x86_64-apple-darwin' }}/release/bundle/macos/LANDrop.app
 
       - name: Upload macOS artifacts
         if: matrix.platform == 'macos-latest'
         uses: actions/upload-artifact@v4
         with:
           name: landrop-macos-${{ matrix.arch }}
+          if-no-files-found: error
+          retention-days: 90
           path: |
             target/${{ matrix.arch == 'aarch64' && 'aarch64-apple-darwin' || 'x86_64-apple-darwin' }}/release/bundle/dmg/*.dmg
-            target/${{ matrix.arch == 'aarch64' && 'aarch64-apple-darwin' || 'x86_64-apple-darwin' }}/release/bundle/macos/*.app
 
       - name: Upload Windows artifacts
         if: matrix.platform == 'windows-latest'
         uses: actions/upload-artifact@v4
         with:
           name: landrop-windows-x86_64
+          if-no-files-found: error
+          retention-days: 90
           path: |
             target/release/bundle/nsis/*.exe
             target/release/bundle/msi/*.msi
@@ -107,6 +115,10 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/**/*
+          files: |
+            artifacts/**/*.dmg
+            artifacts/**/*.exe
+            artifacts/**/*.msi
+          fail_on_unmatched_files: true
           generate_release_notes: true
           draft: false
