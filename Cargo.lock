@@ -1850,6 +1850,7 @@ dependencies = [
  "hostname",
  "landrop-core",
  "landrop-discovery",
+ "landrop-platform",
  "landrop-protocol",
  "landrop-security",
  "landrop-state",
@@ -1969,6 +1970,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
+ "tempfile",
  "thiserror 1.0.69",
  "tokio",
  "tokio-rustls",
@@ -1996,7 +1998,9 @@ name = "landrop-testkit"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "futures",
  "landrop-core",
+ "landrop-fs",
  "landrop-protocol",
  "landrop-security",
  "landrop-transfer",
@@ -2005,8 +2009,10 @@ dependencies = [
  "tempfile",
  "tokio",
  "tokio-rustls",
+ "tokio-util",
  "tracing",
  "tracing-subscriber",
+ "uuid",
 ]
 
 [[package]]

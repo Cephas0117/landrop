@@ -16,3 +16,9 @@ tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 tempfile = "3"
 anyhow = { workspace = true }
+
+[dev-dependencies]
+futures = { workspace = true }
+tokio-util = { workspace = true }
+uuid = { workspace = true }
+landrop-fs = { path = "../landrop-fs" }

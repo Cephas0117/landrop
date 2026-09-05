@@ -9,6 +9,7 @@ pub struct ManifestBuilder;
 
 impl ManifestBuilder {
     pub fn build(paths: &[PathBuf]) -> Result<Manifest> {
+        anyhow::ensure!(!paths.is_empty(), "请选择要发送的文件或文件夹");
         let session_id = Uuid::new_v4();
         let mut files = Vec::new();
         let mut total_bytes = 0u64;
@@ -27,10 +28,17 @@ impl ManifestBuilder {
                 let entry = Self::file_entry(path, &rel)?;
                 total_bytes += entry.size;
                 files.push(entry);
+            } else {
+                anyhow::bail!("无法读取文件或文件夹：{}", path.display());
             }
         }
 
-        Ok(Manifest { session_id, transfer_name, files, total_bytes })
+        Ok(Manifest {
+            session_id,
+            transfer_name,
+            files,
+            total_bytes,
+        })
     }
 
     fn walk_dir(
