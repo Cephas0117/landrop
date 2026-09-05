@@ -59,7 +59,7 @@ jobs:
 
       - name: Build Tauri app (macOS)
         if: matrix.platform == 'macos-latest'
-        run: node frontend/node_modules/@tauri-apps/cli/tauri.js build ${{ matrix.args }} --ci --bundles dmg -- --locked
+        run: node frontend/node_modules/@tauri-apps/cli/tauri.js build ${{ matrix.args }} --ci --bundles app,dmg -- --locked
         env:
           APPLE_SIGNING_IDENTITY: "-"
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}

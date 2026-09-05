@@ -29,3 +29,5 @@
 ## 2026-09-05：0.1.6 安装包构建
 
 应用、工作区及前端版本统一为 0.1.6，修复旧发布标签递增而安装包始终显示 0.1.0 的问题。Release 工作流使用 npm 锁文件中的 Tauri CLI，避免每次从源码安装不同版本的 CLI；Rust 构建启用 --locked。macOS 使用 ad-hoc 签名并执行严格签名校验，Windows 生成 NSIS EXE 与 MSI。只上传安装包，不再把 .app 内部的图标、Info.plist 和裸二进制当作发布附件。手动触发仅保存 Actions 产物，标签触发仍沿用仓库原有公开发布行为。
+
+Mac 构建显式请求 app 与 dmg 两种产物，使 Tauri 在创建 DMG 后保留 .app 供签名校验；对外仍只上传 DMG 安装包。
