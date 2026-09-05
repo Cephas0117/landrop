@@ -41,7 +41,7 @@ export const transfers = {
 
   updateProgress(id: string, progress: TransferProgress) {
     const t = _transfers.get(id);
-    if (!t) return;
+    if (!t || ["Completed", "Failed", "Canceled"].includes(t.status)) return;
     _transfers = new Map(_transfers).set(id, { ...t, status: "Transferring", progress });
   },
 

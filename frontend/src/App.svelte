@@ -25,8 +25,64 @@
 
   onMount(async () => {
     try {
+      unlisteners.push(
+        await ipc.listenPeerUpsert((peer) => {
+          const isNew = !devices.peers.has(peer.id);
+          devices.addOrUpdate(peer);
+          if (isNew) toasts.info(`发现 ${peer.name}`, peer.addr);
+        }),
+        await ipc.listenPeerExpired((id) => {
+          const peer = devices.peers.get(id);
+          if (peer) toasts.warn(`${peer.name} 已离线`);
+          devices.remove(id);
+        }),
+        await ipc.listenTransferQueued((data) => {
+          transfers.start({
+            id: data.transfer_id,
+            peerId: data.peer_id,
+            peerName: data.peer_name,
+            direction: data.direction === "Send" ? "Send" : "Receive",
+            status: "Queued",
+            progress: {
+              bytesSent: 0,
+              totalBytes: data.total_bytes,
+              speedBps: 0,
+              etaSecs: 0,
+              filesDone: 0,
+              filesTotal: data.files_total,
+            },
+            paths: [],
+          });
+          if (data.direction === "Receive") {
+            toasts.info(`正在接收来自 ${data.peer_name} 的文件`);
+          }
+        }),
+        await ipc.listenProgress((data) => {
+          transfers.updateProgress(data.transfer_id, {
+            bytesSent: data.bytes_sent,
+            totalBytes: data.total_bytes,
+            speedBps: data.speed_bps,
+            etaSecs: data.eta_secs,
+            filesDone: data.files_done,
+            filesTotal: data.files_total,
+          });
+        }),
+        await ipc.listenCompleted((id) => {
+          const t = transfers.map.get(id);
+          transfers.updateStatus(id, "Completed");
+          toasts.success("传输完成", t?.peerName);
+        }),
+        await ipc.listenFailed(({ transfer_id, error }) => {
+          const t = transfers.map.get(transfer_id);
+          transfers.updateStatus(transfer_id, "Failed", error);
+          toasts.error("传输失败", t ? `${t.peerName}：${error}` : error);
+        })
+      );
+
       appInfo = await ipc.appBootstrap();
       await ipc.discoveryStart();
+      const peers = await ipc.listPeers();
+      for (const p of peers) devices.addOrUpdate(p);
       toasts.success("LANDrop 已就绪", appInfo.device_name);
       toasts.info("正在扫描附近设备…");
     } catch (e) {
@@ -34,63 +90,6 @@
     } finally {
       booting = false;
     }
-
-    unlisteners.push(
-      await ipc.listenPeerUpsert((peer) => {
-        const isNew = !devices.peers.has(peer.id);
-        devices.addOrUpdate(peer);
-        if (isNew) toasts.info(`发现 ${peer.name}`, peer.addr);
-      }),
-      await ipc.listenPeerExpired((id) => {
-        const peer = devices.peers.get(id);
-        if (peer) toasts.warn(`${peer.name} 已离线`);
-        devices.remove(id);
-      }),
-      await ipc.listenTransferQueued((data) => {
-        transfers.start({
-          id: data.transfer_id,
-          peerId: data.peer_id,
-          peerName: data.peer_name,
-          direction: data.direction === "Send" ? "Send" : "Receive",
-          status: "Queued",
-          progress: {
-            bytesSent: 0,
-            totalBytes: data.total_bytes,
-            speedBps: 0,
-            etaSecs: 0,
-            filesDone: 0,
-            filesTotal: data.files_total,
-          },
-          paths: [],
-        });
-        if (data.direction === "Receive") {
-          toasts.info(`正在接收来自 ${data.peer_name} 的文件`);
-        }
-      }),
-      await ipc.listenProgress((data) => {
-        transfers.updateProgress(data.transfer_id, {
-          bytesSent: data.bytes_sent,
-          totalBytes: data.total_bytes,
-          speedBps: data.speed_bps,
-          etaSecs: data.eta_secs,
-          filesDone: data.files_done,
-          filesTotal: data.files_total,
-        });
-      }),
-      await ipc.listenCompleted((id) => {
-        const t = transfers.map.get(id);
-        transfers.updateStatus(id, "Completed");
-        toasts.success("传输完成", t?.peerName);
-      }),
-      await ipc.listenFailed(({ transfer_id, error }) => {
-        const t = transfers.map.get(transfer_id);
-        transfers.updateStatus(transfer_id, "Failed", error);
-        toasts.error("传输失败", t ? `${t.peerName}：${error}` : error);
-      })
-    );
-
-    const peers = await ipc.listPeers();
-    for (const p of peers) devices.addOrUpdate(p);
   });
 
   onDestroy(async () => {
@@ -104,11 +103,11 @@
 
   async function sendFiles() {
     if (!selectedPeer) return;
-    const result = await open({ multiple: true, directory: false });
-    if (!result) return;
-    const paths = Array.isArray(result) ? result : [result];
-    if (paths.length === 0) return;
     try {
+      const result = await open({ multiple: true, directory: false });
+      if (!result) return;
+      const paths = Array.isArray(result) ? result : [result];
+      if (paths.length === 0) return;
       await ipc.queueSend(selectedPeer.id, paths);
       toasts.info(`正在发送 ${paths.length} 个文件至 ${selectedPeer.name}`);
     } catch (e) {

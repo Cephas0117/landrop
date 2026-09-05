@@ -15,7 +15,7 @@ impl Default for Capabilities {
             protocol_version: 1,
             max_chunk_size: 256 * 1024,
             supports_tls13: true,
-            supports_resume: true,
+            supports_resume: false,
         }
     }
 }

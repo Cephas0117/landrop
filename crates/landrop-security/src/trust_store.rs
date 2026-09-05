@@ -15,9 +15,15 @@ pub struct TrustStore {
 
 impl TrustStore {
     pub fn load() -> Result<Self> {
-        let path = store_path()?;
+        Self::load_from(store_path()?)
+    }
+
+    pub fn load_from(path: PathBuf) -> Result<Self> {
         if !path.exists() {
-            return Ok(Self { path, ..Default::default() });
+            return Ok(Self {
+                path,
+                ..Default::default()
+            });
         }
         let raw = std::fs::read(&path)
             .with_context(|| format!("failed to read trust store: {}", path.display()))?;
@@ -38,7 +44,10 @@ impl TrustStore {
     }
 
     pub fn is_trusted(&self, id: Uuid, fingerprint: &str) -> bool {
-        self.peers.get(&id).map(|fp| fp == fingerprint).unwrap_or(false)
+        self.peers
+            .get(&id)
+            .map(|fp| fp == fingerprint)
+            .unwrap_or(false)
     }
 
     pub fn add_peer(&mut self, id: Uuid, fingerprint: String) {

@@ -24,7 +24,7 @@ pub struct ServiceContainer {
 
 impl ServiceContainer {
     pub async fn init(device_name: String, receive_dir: PathBuf) -> Result<Arc<Self>> {
-        let identity = Arc::new(DeviceIdentity::generate()?);
+        let identity = Arc::new(DeviceIdentity::load_or_create()?);
         let trust_store = Arc::new(RwLock::new(TrustStore::load().unwrap_or_default()));
         let pairing = Arc::new(PairingManager::new());
 
